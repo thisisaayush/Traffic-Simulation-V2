@@ -7,14 +7,11 @@ class MapImplementation:
     count = 0
     generated_trucks = []
     graph = nx.Graph()
-    def __init__(self, env="unknown", model="unknown", speed="unknown", x=0, y=0):
+    def __init__(self, env="unknown", speed="unknown"):
         MapImplementation.count += 1
         self.env = env
         self.name = "Truck {}".format(MapImplementation.count)
-        self.model = model
         self.speed = speed
-        self.x = x
-        self.y = y
 
         for road in coordinates:
             for i in range(len(road)-1):
@@ -67,7 +64,7 @@ class MapImplementation:
                 edge_dist = geopy.distance.distance(coord_tuple[i], coord_tuple[i + 1]).km
                 edge_time = round(edge_dist / speed * 3600, 2)
                 graph.add_edge(coord_tuple[i], coord_tuple[i + 1], weight=edge_time)
-        shortest_path = nx.shortest_path(graph, start, end, weight='weight')
+        shortest_path_ = nx.shortest_path(graph, start, end, weight='weight')
 
         env = simpy.Environment()
         env.process(self.simulate_traffic(coordinates, env))
@@ -75,15 +72,15 @@ class MapImplementation:
         travel_time = []
         total_time = []
         x = 0
-        for i in range(len(shortest_path) - 1):
-            edge_dist = geopy.distance.distance(shortest_path[i], shortest_path[i + 1]).km
+        for i in range(len(shortest_path_) - 1):
+            edge_dist = geopy.distance.distance(shortest_path_[i], shortest_path_[i + 1]).km
             edge_time = round(edge_dist / speed * 3600, 2)
             x = env.timeout(edge_time).value
             travel_time.append(edge_time)
 
         print("{:<20}{}{}".format("Travel time:", travel_time, " seconds."))
-        print("{:<20}{}".format("Shortest path:", shortest_path))
-        return shortest_path
+        print("{:<20}{}".format("Shortest path:", shortest_path_))
+        return shortest_path_
 
     def queue_truck(self, endpoint, queue):
         yield self.env.timeout(5) # queues for 5 sec before entering.
@@ -103,16 +100,6 @@ class MapImplementation:
 
 
 
-class Truck:
-    count = 0
-    def __init__(self, env, start, end, speed, queue):
-        Truck.count += 1
-        self.env = env
-        self.name = f"Truck {Truck.count}"
-        self.start = start
-        self.end = end
-        self.speed = speed
-        self.queue = queue
 
 
 
@@ -153,15 +140,7 @@ if __name__ == "__main__":
                 truck_.append(truck)
 
         print(truck_)
-
-        start = (10.1, 4.8)
-        end = (7.5, 10.8)
-        speed = 50
-        path = map.shortest_path(coordinates, (10.1, 4.8), (7.5, 10.8), 60)
-        print("{:<20}{}".format("Coordinates: ", path))
-
-        print("\n")
-
+    print()
 
     truck_routes = [
         {'start': (9.0,2.8), 'end': (1.2,5.8), 'speed': 50},
@@ -175,6 +154,12 @@ if __name__ == "__main__":
         speed = route['speed']
 
         shortest_path = map.shortest_path(coordinates, start, end, speed)
-        print("Shortest path for truck with start point {} and end point {}: {}".format(start, end, shortest_path))
         print()
 
+'''
+  start = (10.1, 4.8)
+        end = (7.5, 10.8)
+        speed = 50
+        path = map.shortest_path(coordinates, (10.1, 4.8), (7.5, 10.8), 60)
+        print("{:<20}{}".format("Coordinates: ", path))
+'''
