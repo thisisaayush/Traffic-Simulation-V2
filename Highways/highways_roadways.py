@@ -114,9 +114,7 @@ endpoints_coord = [(3.4, 10.8), (1.5, 9.6), (1.2, 5.8), (2.7, 4.8), (3.1, 2.0), 
 
 env = simpy.Environment()
 map_impl = MapImplementation(env)
-
-endpoint = (10.1, 4.8)
 queue = []
 for endpoint in endpoints_coord:
     env.process(map_impl.generate_trucks(endpoint, queue, endpoints_coord))
-env.run(until=200)  # Run the simulation for 100 time units
+env.run(until=50)  # Run the simulation for 100 time units
