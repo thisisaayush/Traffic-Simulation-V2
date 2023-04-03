@@ -1,6 +1,7 @@
+''' This is the final update. '''
 import geopy.distance
 import simpy
-
+import networkx as nx
 
 class Roadways:
     road_count = 0
@@ -54,8 +55,37 @@ class Intersections:
            return False # intersection doesn't exist.
 
        return self.intersection # returns the list of tuples of intersected coordinates.
-    def shortest_path(self):
-        path = 0
+
+
+    def shortest_path(self, *roads, speed, start, end):
+        graph = nx.Graph()
+        coordinates = []
+        travel_time = []
+        distance_list = []
+
+        for road in roads:
+            coordinates.append(road.nodes) # creates list ( of list) of tuples for a network.
+
+        for coord_list in coordinates:
+            for i in range(len(coord_list) - 1):
+                edge_dist = geopy.distance.distance(coord_list[i], coord_list[i + 1]).km
+                edge_time = round(edge_dist / speed, 2)
+                graph.add_edge(coord_list[i], coord_list[i + 1], weight=edge_time)
+        shortest_path_ = nx.shortest_path(graph, start, end, weight='weight')
+
+
+        for i in range(len(shortest_path_) - 1):
+            edge_dist = round(geopy.distance.distance(shortest_path_[i], shortest_path_[i + 1]).km,2)
+            edge_time = round(edge_dist / speed * 3600, 2)
+            travel_time.append(edge_time)
+            distance_list.append(edge_dist)
+
+        print("{:<20}{}{}".format("Travel time:", travel_time, " seconds."))
+        print("{:<20}{}".format("Shortest path:", shortest_path_))
+        print("{:<20}{}{}".format("Distance List:", distance_list, " km."))
+
+        #return shortest_path_, travel_time
+
 
 class Truck(Roadways):
     truck_count = 0
@@ -66,14 +96,20 @@ class Truck(Roadways):
         self.speed = speed
         self.trucks_generated = []
 
-def generate_trucks(env, roadways):
-    for endpoint in roadways.endpoints:
+def generate_trucks(env, roadways, until):
+
+    while True:
         yield env.timeout(5) # wait for 5 time unit to generate a truck.
-        queue_time = env.now
         truck = Truck(env, 55)
         truck.trucks_generated.append(truck)
-        # implement condition to check if it's a road or a highway later.
-        print(f"{truck.name} is queued at endpoints {endpoint} of a road {roadways.name} at {env.now} time.")
+
+        for endpoint in roadways.endpoints:
+            print(f"{truck.name} is queued at endpoints {endpoint} of a road {roadways.name} at {env.now} time.")
+
+        if env.now >= until:
+            break
+
+
 
 # road and highway instantiation.
 road1 = Roadways([(10.1, 7.2),(9.0, 7.2), (7.4, 7.4), (4.2, 8.0)], [(10.1, 7.2)])
@@ -101,15 +137,18 @@ intersection12 = Intersections().find_intersection(highway1.nodes, road4.nodes)
 intersection13 = Intersections().find_intersection(highway1.nodes, road6.nodes)
 intersection14 = Intersections().find_intersection(highway2.nodes, road5.nodes)
 
-
 # create a simpy environment.
 env = simpy.Environment()
 
 # generate trucks for each road.
 for roadways in [road1, road2, road3, road4, road5, road6, highway1, highway2]:
-    env.process(generate_trucks(env, roadways))
+    env.process(generate_trucks(env, roadways, 150))
 
 env.run(until=50)
-
+print()
 # endpoints_coord = [(3.4, 1.2), (1.5, 2.4), (1.2, 6.2), (2.7, 7.2), (3.1, 10.0), (7.5, 1.2), (7.5, 1.8), (7.2, 9.2)
 #    , (8.9, 1.5), (10.1, 2.4), (9.8, 4.2), (10.1, 7.2), (9.0, 9.2)]
+x = Intersections()
+start = (10.1, 7.2)
+end = (9.8, 4.2)
+x.shortest_path(road1, road2, road3, road4, road5, road6, highway1, highway2, speed=55, start=start, end=end)

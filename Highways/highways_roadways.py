@@ -118,3 +118,6 @@ queue = []
 for endpoint in endpoints_coord:
     env.process(map_impl.generate_trucks(endpoint, queue, endpoints_coord))
 env.run(until=50)  # Run the simulation for 100 time units
+
+
+
