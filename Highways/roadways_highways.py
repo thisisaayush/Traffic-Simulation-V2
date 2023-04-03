@@ -45,6 +45,10 @@ class nodes_distance:
 class Intersections:
     def __init__(self):
         self.intersection = []
+
+        '''Use all_nodes function to find the intersections between two
+         road networks, if exists return the intersected coordinates, else returns 
+         False.'''
     def find_intersection(self, road_network1, road_network2):
        for coord1 in road_network1:
            for coord2 in road_network2:
@@ -56,15 +60,18 @@ class Intersections:
 
        return self.intersection # returns the list of tuples of intersected coordinates.
 
+    def all_nodes(self, *roads): # returns all the nodes of instantiated road and highway objects.
+        coordinates = []
+        for road in roads:
+            coordinates.append(road.nodes) # creates list ( of list) of tuples for a network.
 
+        return coordinates
     def shortest_path(self, *roads, speed, start, end):
         graph = nx.Graph()
-        coordinates = []
         travel_time = []
         distance_list = []
 
-        for road in roads:
-            coordinates.append(road.nodes) # creates list ( of list) of tuples for a network.
+        coordinates = self.all_nodes(*roads)
 
         for coord_list in coordinates:
             for i in range(len(coord_list) - 1):
@@ -72,8 +79,6 @@ class Intersections:
                 edge_time = round(edge_dist / speed, 2)
                 graph.add_edge(coord_list[i], coord_list[i + 1], weight=edge_time)
         shortest_path_ = nx.shortest_path(graph, start, end, weight='weight')
-
-
         for i in range(len(shortest_path_) - 1):
             edge_dist = round(geopy.distance.distance(shortest_path_[i], shortest_path_[i + 1]).km,2)
             edge_time = round(edge_dist / speed * 3600, 2)
@@ -83,9 +88,7 @@ class Intersections:
         print("{:<20}{}{}".format("Travel time:", travel_time, " seconds."))
         print("{:<20}{}".format("Shortest path:", shortest_path_))
         print("{:<20}{}{}".format("Distance List:", distance_list, " km."))
-
         #return shortest_path_, travel_time
-
 
 class Truck(Roadways):
     truck_count = 0
@@ -99,17 +102,20 @@ class Truck(Roadways):
 def generate_trucks(env, roadways, until):
 
     while True:
-        yield env.timeout(5) # wait for 5 time unit to generate a truck.
+        yield env.timeout(5)  # queues for 5 sec before entering.
         truck = Truck(env, 55)
         truck.trucks_generated.append(truck)
-
+        arrival_time = env.now
         for endpoint in roadways.endpoints:
             print(f"{truck.name} is queued at endpoints {endpoint} of a road {roadways.name} at {env.now} time.")
+            entry_time = 4 + arrival_time  # 4 time units is a time needed to enter a road/highway after queue time.
+            print(f"{truck.name} has entered the {endpoint} at {entry_time} time.")
+
+        # dest = random.choice(endpoints_coord)
+        # shortest_route = Intersections().shortest_path(roadways, speed=truck.speed, start=roadways.endpoints, end=dest)
 
         if env.now >= until:
             break
-
-
 
 # road and highway instantiation.
 road1 = Roadways([(10.1, 7.2),(9.0, 7.2), (7.4, 7.4), (4.2, 8.0)], [(10.1, 7.2)])

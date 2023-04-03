@@ -1,6 +1,7 @@
 import geopy.distance
 import simpy
 import networkx as nx
+import random
 class Roadways:
     road_count = 0
     def __init__(self, nodes, endpoints):
@@ -19,38 +20,22 @@ class Highways:
         self.on_off_ramp = 5
         self.endpoints = endpoints # keeps endpoints list of tuples of coord of roads or highways.
         self.endpoints = endpoints
-
-    def on_off_ramp(self):
-        for x in self.nodes:
-            if x == (4.2, 8.0) or x == (6.0, 3.3):
-                return True # on-ramp- road to highway.
-
-            elif x == (3.1, 7.9) or x == (6.5, 2.6):
-                return False # off-ramp- highway to road.
-
 class Intersections:
     def __init__(self):
         self.intersection = []
-    def find_intersection(self, road_network1, road_network2):
-       for coord1 in road_network1:
-           for coord2 in road_network2:
-               if coord1 == coord2:
-                   self.intersection.append(coord1)
 
-       if len(self.intersection) == 0:
-           return False # intersection doesn't exist.
+    def all_nodes(self, *roads):
+        coordinates = []
+        for road in roads:
+            coordinates.append(road.nodes) # creates list ( of list) of tuples for a network.
 
-       return self.intersection # returns the list of tuples of intersected coordinates.
-
-
+        return coordinates
     def shortest_path(self, *roads, speed, start, end):
         graph = nx.Graph()
-        coordinates = []
         travel_time = []
         distance_list = []
 
-        for road in roads:
-            coordinates.append(road.nodes) # creates list ( of list) of tuples for a network.
+        coordinates = self.all_nodes(*roads)
 
         for coord_list in coordinates:
             for i in range(len(coord_list) - 1):
@@ -58,8 +43,6 @@ class Intersections:
                 edge_time = round(edge_dist / speed, 2)
                 graph.add_edge(coord_list[i], coord_list[i + 1], weight=edge_time)
         shortest_path_ = nx.shortest_path(graph, start, end, weight='weight')
-
-
         for i in range(len(shortest_path_) - 1):
             edge_dist = round(geopy.distance.distance(shortest_path_[i], shortest_path_[i + 1]).km,2)
             edge_time = round(edge_dist / speed * 3600, 2)
@@ -69,8 +52,33 @@ class Intersections:
         print("{:<20}{}{}".format("Travel time:", travel_time, " seconds."))
         print("{:<20}{}".format("Shortest path:", shortest_path_))
         print("{:<20}{}{}".format("Distance List:", distance_list, " km."))
-
         #return shortest_path_, travel_time
+class Truck(Roadways):
+    truck_count = 0
+    def __init__(self, env, speed):
+        Truck.truck_count += 1
+        self.env = env
+        self.name = f"Truck-{Truck.truck_count}"
+        self.speed = speed
+        self.trucks_generated = []
+
+    def generate_trucks(env, roadways, until):
+
+        while True:
+            yield env.timeout(5)  # queues for 5 sec before entering.
+            truck = Truck(env, 55)
+            truck.trucks_generated.append(truck)
+            arrival_time = env.now
+            for endpoint in roadways.endpoints:
+                print(f"{truck.name} is queued at endpoints {endpoint} of a road {roadways.name} at {env.now} time.")
+                entry_time = 4 + arrival_time  # 4 time units is a time needed to enter a road/highway after queue time.
+                print(f"{truck.name} has entered the {endpoint} at {entry_time} time.")
+
+            # dest = random.choice(endpoints_coord)
+            # shortest_route = Intersections().shortest_path(roadways, speed=truck.speed, start=roadways.endpoints, end=dest)
+
+            if env.now >= until:
+                break
 
 
 
@@ -83,7 +91,18 @@ road6 = Roadways([(3.1, 7.9), (3.2, 6.9), (3.2, 6.1), (3.4, 1.2)], [(3.4, 1.2)])
 highway1 = Highways([(3.1, 10.0), (3.1, 7.9), (4.1, 4.0), (7.8, 2.6), (9.1, 1.8), (8.9, 1.5)], [(3.1, 10.0), (8.9, 1.5)])
 highway2 = Highways([(1.5, 2.4), (6.0, 3.3), (6.5, 2.6), (7.8, 2.6), (10.1, 2.4)], [(1.5, 2.4), (10.1, 2.4)])
 
+# env = simpy.Environment()
+# # generate trucks for each road.
+# for roadways in [road1, road2, road3, road4, road5, road6, highway1, highway2]:
+#     env.process(Truck.generate_trucks(env, roadways, 150))
+#
+# env.run(until=50)
+
 x = Intersections()
-start = (10.1, 7.2)
-end = (9.8, 4.2)
-x.shortest_path(road1, road2, road3, road4, road5, road6, highway1, highway2, speed=55, start=start, end=end)
+x.shortest_path(road1, road2, road3, road4, road5, road6, highway1, highway2, start=(10.1, 7.2), end=(9.8, 4.2), speed=55)
+
+# endpoints_list = []
+#
+# for x in [road1, road2, road3]:
+#     endpoints_list.extend(x.endpoints)
+# print(endpoints_list)
