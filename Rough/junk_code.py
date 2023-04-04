@@ -340,3 +340,37 @@ grid.move_point(shortest_path)
 
 '''
 
+# def shortest_path(self, *roads, speed, start, end):
+#     graph = nx.Graph()
+#     travel_time = []
+#     distance_list = []
+#
+#     coordinates = self.all_nodes(*roads)
+#     traffic_generators = {} # traffic light generators for each intersection.
+#
+#     for intersection in self.find_intersections(*roads):
+#         traffic_generators[intersection] = self.traffic_light(env, "red")
+#
+#     for coord_list in coordinates:
+#         for i in range(len(coord_list) - 1):
+#             edge_dist = geopy.distance.distance(coord_list[i], coord_list[i + 1]).km
+#             edge_time = round(edge_dist / speed, 2)
+#             graph.add_edge(coord_list[i], coord_list[i + 1], weight=edge_time)
+#             distance_list.append(edge_dist)
+#             travel_time.append(edge_time)
+#             if coord_list[i] in traffic_generators:
+#                 light = traffic_generators[coord_list[i]]
+#                 yield env.process(light)
+#                 light_status = light.color
+#
+#                 if light_status == "red":
+#                     edge_time += 0.085  # 5 minutes wait time at red light.
+#                 elif light_status == "yellow":
+#                     edge_time += 0.042  # 2.5 minutes wait time at yellow light.
+#
+#     shortest_path_ = nx.shortest_path(graph, start, end, weight='weight')
+#
+#     print("{:<20}{}{}".format("Travel time:", travel_time, " hours."))
+#     print("{:<20}{}".format("Shortest path:", shortest_path_))
+#     print("{:<20}{}{}".format("Distance List:", distance_list, " miles."))
+#     print()
